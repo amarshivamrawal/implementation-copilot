@@ -4,7 +4,7 @@
  */
 
 import axios, { AxiosInstance } from 'axios';
-import type { RLProject, RLTask, RLMessage, RLMember } from '@/types';
+import type { RLProject, RLTask, RLMessage, RLMember, RLAttachment } from '@/types';
 
 const BASE_URL = process.env.ROCKETLANE_BASE_URL || 'https://api.rocketlane.com/api/1.0';
 const API_KEY  = process.env.ROCKETLANE_API_KEY || '';
@@ -204,6 +204,81 @@ export async function fetchProjectMessages(projectId: string): Promise<RLMessage
   } catch { /* skip */ }
 
   return allMessages;
+}
+
+// ─── File attachments (VTT / transcript files on RL tasks & project) ─────────
+
+const TRANSCRIPT_EXTS = ['.vtt', '.txt', '.srt'];
+
+function isTranscriptFile(name: string): boolean {
+  const lower = name.toLowerCase();
+  return TRANSCRIPT_EXTS.some((ext) => lower.endsWith(ext));
+}
+
+export async function fetchProjectVTTAttachments(projectId: string): Promise<RLAttachment[]> {
+  const client   = createClient();
+  const results: RLAttachment[] = [];
+  const projectUrl = `https://app.rocketlane.com/projects/${projectId}`;
+
+  // ── 1. Project-level files ──────────────────────────────────────────────────
+  for (const endpoint of [`/projects/${projectId}/files`, `/projects/${projectId}/attachments`, `/projects/${projectId}/documents`]) {
+    try {
+      const res  = await client.get(endpoint);
+      const data = res.data?.data ?? res.data?.files ?? res.data?.attachments ?? res.data ?? [];
+      if (!Array.isArray(data)) continue;
+
+      for (const f of data) {
+        const name = String(f.name ?? f.fileName ?? f.filename ?? '');
+        if (!isTranscriptFile(name)) continue;
+        const downloadUrl = f.downloadUrl ?? f.download_url ?? f.url ?? f.fileUrl ?? '';
+        if (!downloadUrl) continue;
+        results.push({
+          id:          String(f.id ?? ''),
+          name,
+          downloadUrl,
+          projectId,
+          createdAt:   f.createdAt ?? f.created_at ?? new Date().toISOString(),
+          rlViewUrl:   f.url ?? f.viewUrl ?? projectUrl,
+        });
+      }
+      break; // stop trying endpoints once one succeeds
+    } catch { /* try next */ }
+  }
+
+  // ── 2. Task-level attachments ───────────────────────────────────────────────
+  try {
+    const tasks = await fetchProjectTasks(projectId);
+    for (const task of tasks) {
+      for (const endpoint of [`/tasks/${task.id}/attachments`, `/tasks/${task.id}/files`]) {
+        try {
+          const res  = await client.get(endpoint);
+          const data = res.data?.data ?? res.data?.files ?? res.data?.attachments ?? res.data ?? [];
+          if (!Array.isArray(data)) continue;
+
+          for (const f of data) {
+            const name = String(f.name ?? f.fileName ?? f.filename ?? '');
+            if (!isTranscriptFile(name)) continue;
+            const downloadUrl = f.downloadUrl ?? f.download_url ?? f.url ?? f.fileUrl ?? '';
+            if (!downloadUrl) continue;
+            results.push({
+              id:          String(f.id ?? ''),
+              name,
+              downloadUrl,
+              taskId:      task.id,
+              taskTitle:   task.title,
+              taskUrl:     task.url,
+              projectId,
+              createdAt:   f.createdAt ?? f.created_at ?? new Date().toISOString(),
+              rlViewUrl:   task.url ?? projectUrl,
+            });
+          }
+          break;
+        } catch { /* try next */ }
+      }
+    }
+  } catch { /* skip */ }
+
+  return results;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

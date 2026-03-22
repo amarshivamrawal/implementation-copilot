@@ -46,6 +46,18 @@ export interface RLTask {
   updatedAt: string;
 }
 
+export interface RLAttachment {
+  id: string;
+  name: string;
+  downloadUrl: string;
+  taskId?: string;
+  taskTitle?: string;
+  taskUrl?: string;
+  projectId: string;
+  createdAt: string;
+  rlViewUrl: string;   // deep-link back to the RL task / project files
+}
+
 export interface RLMessage {
   id: string;
   projectId: string;
@@ -136,4 +148,7 @@ export interface VTTTranscript {
   taskId?: string;
   segments: VTTSegment[];
   rawText: string;
+  // clickable deep-link to the source (RL task or OneDrive file)
+  sourceUrl?: string;
+  sourceLabel?: string;  // "RL Task: Go Live Prep" or "OneDrive: Teams Recording"
 }
