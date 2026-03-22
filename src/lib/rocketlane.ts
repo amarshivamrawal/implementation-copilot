@@ -23,7 +23,8 @@ const CF = {
 };
 
 // Project statuses treated as "in-progress"
-const IN_PROGRESS_STATUSES = ['IN_PROGRESS', 'ACTIVE', 'ONGOING', 'On Track', 'At Risk', 'Off Track'];
+// Rocketlane API returns status as { value: number, label: string } — we match on the label.
+const IN_PROGRESS_STATUSES = ['IN_PROGRESS', 'ACTIVE', 'ONGOING', 'On Track', 'At Risk', 'Off Track', 'In progress', 'In Progress'];
 
 // Projects whose name ends with "Base App" (case-insensitive)
 const BASE_APP_SUFFIX = 'base app';
@@ -72,7 +73,7 @@ function mapProject(raw: any): RLProject {
   return {
     id:                 projectId,
     name:               raw.name ?? raw.projectName ?? 'Unnamed Project',
-    status:             raw.status ?? raw.projectStatus ?? '',
+    status:             (typeof raw.status === 'object' ? raw.status?.label : raw.status) ?? raw.projectStatus ?? '',
     category:           raw.category ?? raw.projectType ?? raw.type ?? '',
     customFields:       cf,
     customer: raw.customer ? {
@@ -121,8 +122,10 @@ export async function fetchAllProjects(): Promise<RLProject[]> {
   const pageSize = 50;
 
   while (true) {
+    // Fetch all projects; we filter by status client-side since the API returns
+    // status as { value, label } and the exact filter param varies by workspace.
     const res = await client.get('/projects', {
-      params: { page, limit: pageSize, status: 'IN_PROGRESS' },
+      params: { page, limit: pageSize },
     });
 
     // Handle both paginated and flat array responses
