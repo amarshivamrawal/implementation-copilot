@@ -6,6 +6,9 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import type { DashboardData, EscalationRisk } from '@/types';
+
+// Extend the API response type with optional demo flags
+type ApiResponse = DashboardData & { fromCache?: boolean; demo?: boolean; liveError?: string };
 import SummaryCards from '@/components/SummaryCards';
 import EscalationTable from '@/components/EscalationTable';
 import FilterBar, { type Filters } from '@/components/FilterBar';
@@ -58,7 +61,7 @@ function applyFilters(risks: EscalationRisk[], filters: Filters): EscalationRisk
 }
 
 export default function DashboardPage() {
-  const [data,      setData]      = useState<DashboardData | null>(null);
+  const [data,      setData]      = useState<ApiResponse | null>(null);
   const [loading,   setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error,     setError]     = useState<string | null>(null);
@@ -73,7 +76,7 @@ export default function DashboardPage() {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error ?? `HTTP ${res.status}`);
       }
-      const json: DashboardData = await res.json();
+      const json: ApiResponse = await res.json();
       setData(json);
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e));
@@ -175,6 +178,22 @@ export default function DashboardPage() {
         {/* Data loaded */}
         {data && !loading && (
           <>
+            {/* Demo mode banner */}
+            {data.demo && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-3 text-sm">
+                <span className="text-amber-600 font-bold text-base">⚠</span>
+                <div>
+                  <span className="font-semibold text-amber-800">Demo mode — </span>
+                  <span className="text-amber-700">
+                    {data.liveError
+                      ? `Live fetch failed (${data.liveError}). Showing sample data.`
+                      : 'No live projects matched the filter (in-progress + name ends with "Base App"). Showing sample data.'}
+                  </span>
+                  <span className="text-amber-600 ml-2">Once real RL projects are in scope, this banner disappears automatically.</span>
+                </div>
+              </div>
+            )}
+
             {/* Summary cards */}
             <SummaryCards summary={data.summary} />
 
