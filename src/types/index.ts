@@ -11,9 +11,11 @@ export interface RLProject {
   createdAt: string;
   updatedAt: string;
   // Custom fields mapped from Rocketlane
-  arr?: number;             // Annual Recurring Revenue
+  netMrr?: number;          // Net B+P MRR$
   numberOfCenters?: number;
-  legacySourceSystem?: string;
+  sourceSoftware?: string;  // Source Software (legacy system)
+  businessType?: string;    // Business Type
+  servicesTeam?: string;    // Services Team
   pm?: string;              // Project Manager name
   ps?: string;              // Professional Services name
   ic?: string;              // Implementation Consultant name

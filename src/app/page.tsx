@@ -31,7 +31,9 @@ function applyFilters(risks: EscalationRisk[], filters: Filters): EscalationRisk
       const hit =
         r.project.name.toLowerCase().includes(q) ||
         r.topCustomerPoc.toLowerCase().includes(q) ||
-        (r.project.legacySourceSystem ?? '').toLowerCase().includes(q) ||
+        (r.project.sourceSoftware ?? '').toLowerCase().includes(q) ||
+        (r.project.businessType ?? '').toLowerCase().includes(q) ||
+        (r.project.servicesTeam ?? '').toLowerCase().includes(q) ||
         (r.project.pm ?? '').toLowerCase().includes(q) ||
         (r.project.ps ?? '').toLowerCase().includes(q) ||
         (r.project.ic ?? '').toLowerCase().includes(q) ||

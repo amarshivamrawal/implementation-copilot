@@ -12,9 +12,11 @@ const API_KEY  = process.env.ROCKETLANE_API_KEY || '';
 // Custom-field names as configured in your Rocketlane workspace.
 // Adjust these to match your actual Rocketlane custom field labels.
 const CF = {
-  ARR:                'ARR',
+  NET_MRR:            'Net B+P MRR$',
   NUMBER_OF_CENTERS:  'Number of Centers',
-  LEGACY_SOURCE:      'Legacy Source System',
+  SOURCE_SOFTWARE:    'Source Software',
+  BUSINESS_TYPE:      'Business Type',
+  SERVICES_TEAM:      'Services Team',
   PM:                 'PM',
   PS:                 'PS',
   IC:                 'IC',
@@ -23,8 +25,8 @@ const CF = {
 // Project statuses treated as "in-progress"
 const IN_PROGRESS_STATUSES = ['IN_PROGRESS', 'ACTIVE', 'ONGOING', 'On Track', 'At Risk', 'Off Track'];
 
-// Category / type filter for "base application" projects
-const BASE_APP_KEYWORDS = ['base application', 'base app', 'base_application'];
+// Projects whose name ends with "Base App" (case-insensitive)
+const BASE_APP_SUFFIX = 'base app';
 
 function createClient(): AxiosInstance {
   return axios.create({
@@ -81,9 +83,11 @@ function mapProject(raw: any): RLProject {
     members,
     createdAt: raw.createdAt ?? raw.created_at ?? new Date().toISOString(),
     updatedAt: raw.updatedAt ?? raw.updated_at ?? new Date().toISOString(),
-    arr:                Number(extractCF(cf, CF.ARR)) || undefined,
+    netMrr:             Number(extractCF(cf, CF.NET_MRR)) || undefined,
     numberOfCenters:    Number(extractCF(cf, CF.NUMBER_OF_CENTERS)) || undefined,
-    legacySourceSystem: extractCF(cf, CF.LEGACY_SOURCE) || undefined,
+    sourceSoftware:     extractCF(cf, CF.SOURCE_SOFTWARE) || undefined,
+    businessType:       extractCF(cf, CF.BUSINESS_TYPE) || undefined,
+    servicesTeam:       extractCF(cf, CF.SERVICES_TEAM) || undefined,
     pm:                 extractCF(cf, CF.PM) || findMemberByRole(members, 'PM'),
     ps:                 extractCF(cf, CF.PS) || findMemberByRole(members, 'PS'),
     ic:                 extractCF(cf, CF.IC) || findMemberByRole(members, 'IC'),
@@ -104,13 +108,8 @@ export function isInProgressBaseApp(project: RLProject): boolean {
   const statusOk = IN_PROGRESS_STATUSES.some((s) =>
     s.toLowerCase() === project.status?.toLowerCase()
   );
-  const categoryOk = BASE_APP_KEYWORDS.some((kw) =>
-    (project.category ?? '').toLowerCase().includes(kw) ||
-    (project.name ?? '').toLowerCase().includes(kw)
-  );
-  // If category is blank / not set we still include if status matches,
-  // since users may not have typed category in every project.
-  return statusOk && (categoryOk || !project.category);
+  const nameEndsWithBaseApp = (project.name ?? '').toLowerCase().trimEnd().endsWith(BASE_APP_SUFFIX);
+  return statusOk && nameEndsWithBaseApp;
 }
 
 // ─── API calls ───────────────────────────────────────────────────────────────

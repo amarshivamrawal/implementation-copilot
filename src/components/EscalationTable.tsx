@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, ExternalLink, Building2, Users, Server } from 'lucide-react';
+import { ChevronDown, ChevronRight, ExternalLink, Building2, Users, Server, Briefcase } from 'lucide-react';
 import type { EscalationRisk } from '@/types';
 import RiskBadge from './RiskBadge';
 import DelayList from './DelayList';
@@ -31,15 +31,17 @@ export default function EscalationTable({ risks }: Props) {
   return (
     <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
       {/* Table header */}
-      <div className="hidden lg:grid grid-cols-[28px_2fr_1.2fr_1fr_80px_80px_120px_1fr_80px_80px_80px_80px] gap-3 px-4 py-3 bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+      <div className="hidden lg:grid grid-cols-[28px_2fr_1.2fr_1fr_80px_80px_110px_100px_120px_90px_80px_80px_80px_80px] gap-3 px-4 py-3 bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wide">
         <span />
         <span>Project</span>
         <span>Customer POC</span>
         <span>Escalation Reason</span>
         <span>Delays</span>
         <span>Signals</span>
-        <span>ARR</span>
-        <span>Legacy System</span>
+        <span>Net B+P MRR</span>
+        <span>Source SW</span>
+        <span>Business Type</span>
+        <span>Services Team</span>
         <span>PM</span>
         <span>PS</span>
         <span>IC</span>
@@ -78,8 +80,9 @@ export default function EscalationTable({ risks }: Props) {
                     <RiskBadge level={risk.riskLevel} />
                   </div>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
-                    {risk.project.arr && <span>ARR: <strong>${risk.project.arr.toLocaleString()}</strong></span>}
+                    {risk.project.netMrr && <span>MRR: <strong>${risk.project.netMrr.toLocaleString()}</strong></span>}
                     {risk.project.numberOfCenters && <span>Centers: <strong>{risk.project.numberOfCenters}</strong></span>}
+                    {risk.project.businessType && <span>Type: <strong>{risk.project.businessType}</strong></span>}
                     {risk.project.pm && <span>PM: <strong>{risk.project.pm}</strong></span>}
                     {risk.project.ps && <span>PS: <strong>{risk.project.ps}</strong></span>}
                     {risk.project.ic && <span>IC: <strong>{risk.project.ic}</strong></span>}
@@ -92,7 +95,7 @@ export default function EscalationTable({ risks }: Props) {
                 </div>
 
                 {/* Desktop row */}
-                <div className="hidden lg:grid grid-cols-[28px_2fr_1.2fr_1fr_80px_80px_120px_1fr_80px_80px_80px_80px] gap-3 px-4 py-3.5 items-center text-sm">
+                <div className="hidden lg:grid grid-cols-[28px_2fr_1.2fr_1fr_80px_80px_110px_100px_120px_90px_80px_80px_80px_80px] gap-3 px-4 py-3.5 items-center text-sm">
                   <span className="text-slate-400">
                     {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                   </span>
@@ -157,24 +160,39 @@ export default function EscalationTable({ risks }: Props) {
                     )}
                   </span>
 
-                  {/* ARR */}
+                  {/* Net B+P MRR */}
                   <span className="font-medium text-slate-700">
-                    {risk.project.arr
-                      ? `$${(risk.project.arr / 1000).toFixed(0)}K`
+                    {risk.project.netMrr
+                      ? `$${(risk.project.netMrr / 1000).toFixed(1)}K`
                       : <span className="text-slate-300">—</span>}
                   </span>
 
-                  {/* Legacy system */}
+                  {/* Source Software */}
                   <span>
-                    {risk.project.legacySourceSystem ? (
+                    {risk.project.sourceSoftware ? (
                       <span className="flex items-center gap-1 text-xs text-slate-600">
                         <Server className="w-3 h-3 text-slate-400" />
-                        {risk.project.legacySourceSystem}
+                        {risk.project.sourceSoftware}
                       </span>
                     ) : (
                       <span className="text-slate-300">—</span>
                     )}
                   </span>
+
+                  {/* Business Type */}
+                  <span>
+                    {risk.project.businessType ? (
+                      <span className="flex items-center gap-1 text-xs text-slate-600">
+                        <Briefcase className="w-3 h-3 text-slate-400" />
+                        {risk.project.businessType}
+                      </span>
+                    ) : (
+                      <span className="text-slate-300">—</span>
+                    )}
+                  </span>
+
+                  {/* Services Team */}
+                  <span className="text-xs text-slate-600 truncate">{risk.project.servicesTeam || <span className="text-slate-300">—</span>}</span>
 
                   {/* PM */}
                   <span className="text-xs text-slate-600 truncate">{risk.project.pm || <span className="text-slate-300">—</span>}</span>
@@ -217,9 +235,11 @@ export default function EscalationTable({ risks }: Props) {
                     <span className="flex items-center gap-1"><Users className="w-3 h-3" />PM: <strong>{risk.project.pm || 'N/A'}</strong></span>
                     <span className="flex items-center gap-1"><Users className="w-3 h-3" />PS: <strong>{risk.project.ps || 'N/A'}</strong></span>
                     <span className="flex items-center gap-1"><Users className="w-3 h-3" />IC: <strong>{risk.project.ic || 'N/A'}</strong></span>
-                    {risk.project.arr && <span>ARR: <strong>${risk.project.arr.toLocaleString()}</strong></span>}
+                    {risk.project.netMrr && <span>Net B+P MRR: <strong>${risk.project.netMrr.toLocaleString()}</strong></span>}
                     {risk.project.numberOfCenters && <span>Centers: <strong>{risk.project.numberOfCenters}</strong></span>}
-                    {risk.project.legacySourceSystem && <span>Legacy System: <strong>{risk.project.legacySourceSystem}</strong></span>}
+                    {risk.project.sourceSoftware && <span>Source SW: <strong>{risk.project.sourceSoftware}</strong></span>}
+                    {risk.project.businessType && <span>Business Type: <strong>{risk.project.businessType}</strong></span>}
+                    {risk.project.servicesTeam && <span>Services Team: <strong>{risk.project.servicesTeam}</strong></span>}
                   </div>
                 </div>
               )}
