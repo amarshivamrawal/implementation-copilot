@@ -1,5 +1,5 @@
 'use client';
-import { AlertTriangle, Clock, MessageSquare, FolderOpen } from 'lucide-react';
+import { AlertTriangle, Clock, MessageSquare, FolderOpen, ClipboardList } from 'lucide-react';
 
 interface Props {
   summary: {
@@ -8,6 +8,7 @@ interface Props {
     highRisks: number;
     totalDelays: number;
     totalAgitatedSignals: number;
+    socBlockers?: number;
   };
 }
 
@@ -48,10 +49,17 @@ export default function SummaryCards({ summary }: Props) {
       color: 'text-purple-600',
       bg:    'bg-purple-50',
     },
+    {
+      label: 'SOC Milestone Overdue',
+      value: summary.socBlockers ?? 0,
+      icon:  ClipboardList,
+      color: 'text-rose-600',
+      bg:    'bg-rose-50',
+    },
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
       {cards.map((c) => (
         <div key={c.label} className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 flex items-center gap-3">
           <div className={`${c.bg} rounded-lg p-2.5 flex-shrink-0`}>

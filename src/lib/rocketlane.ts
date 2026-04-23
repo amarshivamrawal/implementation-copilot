@@ -167,6 +167,7 @@ export async function fetchProjectTasks(projectId: string): Promise<RLTask[]> {
         })
       ),
       url:        t.url ?? `https://app.rocketlane.com/projects/${projectId}/tasks/${t.id}`,
+      dueDate:    t.dueDate ?? t.due_date ?? t.endDate ?? t.end_date ?? undefined,
       createdAt:  t.createdAt ?? new Date().toISOString(),
       updatedAt:  t.updatedAt ?? new Date().toISOString(),
     })) : [];

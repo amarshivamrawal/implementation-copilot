@@ -16,7 +16,8 @@ import type {
   RLProject,
   RLAttachment,
 } from '@/types';
-import { fetchAllProjects, fetchProjectMessages, fetchProjectVTTAttachments } from './rocketlane';
+import { fetchAllProjects, fetchProjectMessages, fetchProjectVTTAttachments, fetchProjectTasks } from './rocketlane';
+import { detectSOCChecklist } from './socDetector';
 import { fetchVTTFilesForProject } from './onedrive';
 import { vttSegmentsToText, parseVTT, parsePlainTextTranscript } from './vttParser';
 import { analyzeSentiment, isAtRisk, sentimentToRiskLevel } from './sentiment';
@@ -103,6 +104,7 @@ export async function buildDashboardData(): Promise<DashboardData> {
     highRisks:            flagged.filter((r) => r.riskLevel === 'HIGH').length,
     totalDelays:          flagged.reduce((n, r) => n + r.responseDelays.length, 0),
     totalAgitatedSignals: flagged.reduce((n, r) => n + r.customerSignals.length, 0),
+    socBlockers:          flagged.filter((r) => (r.socChecklist?.overdueCount ?? 0) > 0).length,
   };
 
   return { projects: flagged, summary, lastRefreshedAt: new Date().toISOString() };
@@ -111,11 +113,12 @@ export async function buildDashboardData(): Promise<DashboardData> {
 async function analyseProject(project: RLProject): Promise<EscalationRisk> {
   const zenotiSpeakers = buildZenotiSpeakerSet(project);
 
-  // ── Fetch all three sources in parallel ────────────────────────────────────
-  const [messages, rlAttachments, oneDriveVTTs] = await Promise.all([
+  // ── Fetch all sources in parallel ─────────────────────────────────────────
+  const [messages, rlAttachments, oneDriveVTTs, tasks] = await Promise.all([
     fetchProjectMessages(project.id),
     fetchProjectVTTAttachments(project.id),
     fetchVTTFilesForProject(project.name, project.id),
+    fetchProjectTasks(project.id),
   ]);
 
   // ── 1. Customer signals from Rocketlane messages / comments ────────────────
@@ -181,6 +184,8 @@ async function analyseProject(project: RLProject): Promise<EscalationRisk> {
   const topCustomerPoc      = topSignal?.authorName ?? responseDelays[0]?.customerPocName ?? 'N/A';
   const topCustomerPocEmail = topSignal?.authorEmail ?? responseDelays[0]?.customerPocEmail ?? '';
 
+  const socChecklist = detectSOCChecklist(tasks);
+
   const partialRisk = {
     riskLevel,
     customerSignals:      allSignals,
@@ -188,6 +193,7 @@ async function analyseProject(project: RLProject): Promise<EscalationRisk> {
     topCustomerPoc,
     topCustomerPocEmail,
     lastCheckedAt:        new Date().toISOString(),
+    socChecklist,
   };
 
   return {

@@ -42,6 +42,7 @@ export interface RLTask {
   status: string;
   assignees?: RLMember[];
   url?: string;
+  dueDate?: string;         // ISO date string
   createdAt: string;
   updatedAt: string;
 }
@@ -108,6 +109,31 @@ export interface CustomerSignal {
   sourceType: 'CHAT' | 'TASK_COMMENT' | 'VTT';
 }
 
+// ─── SOC Milestone Checklist Types ───────────────────────────────────────────
+
+export type SOCItemKey = 'GLR_MOM' | 'GOLIVE_COMM' | 'DAILY_USAGE' | 'ONBOARDING_MOM';
+export type SOCItemStatus = 'DONE' | 'PENDING' | 'OVERDUE' | 'MISSING';
+
+export interface SOCChecklistItem {
+  key: SOCItemKey;
+  label: string;
+  description: string;
+  status: SOCItemStatus;
+  taskTitle?: string;       // Matched Rocketlane task title
+  taskUrl?: string;         // Deep-link to the task
+  dueDate?: string;         // ISO date
+  completedAt?: string;     // ISO date when marked done
+}
+
+export interface SOCChecklist {
+  items: SOCChecklistItem[];
+  completedCount: number;
+  pendingCount: number;
+  overdueCount: number;
+  missingCount: number;
+  healthScore: number;      // 0–100 weighted score
+}
+
 // ─── Dashboard Types ──────────────────────────────────────────────────────────
 
 export interface EscalationRisk {
@@ -118,6 +144,7 @@ export interface EscalationRisk {
   topCustomerPoc: string;   // Most agitated POC name
   topCustomerPocEmail: string;
   lastCheckedAt: string;
+  socChecklist?: SOCChecklist;
 }
 
 export interface DashboardData {
@@ -128,6 +155,7 @@ export interface DashboardData {
     highRisks: number;
     totalDelays: number;
     totalAgitatedSignals: number;
+    socBlockers: number;    // Projects with at least one OVERDUE SOC item
   };
   lastRefreshedAt: string;
 }

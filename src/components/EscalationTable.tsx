@@ -1,10 +1,17 @@
 'use client';
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, ExternalLink, Building2, Users, Server, Briefcase } from 'lucide-react';
+import { ChevronDown, ChevronRight, ExternalLink, Building2, Users, Server, Briefcase, ClipboardList } from 'lucide-react';
 import type { EscalationRisk } from '@/types';
 import RiskBadge from './RiskBadge';
 import DelayList from './DelayList';
 import SignalList from './SignalList';
+import SOCChecklistPanel from './SOCChecklistPanel';
+
+function socHealthClass(score: number): string {
+  if (score >= 75) return 'text-green-600';
+  if (score >= 50) return 'text-amber-600';
+  return 'text-red-600';
+}
 
 interface Props { risks: EscalationRisk[] }
 
@@ -118,6 +125,15 @@ export default function EscalationTable({ risks }: Props) {
                         {risk.project.numberOfCenters} centers
                       </span>
                     )}
+                    {risk.socChecklist && (
+                      <span className={`flex items-center gap-1 text-xs mt-0.5 font-medium ${socHealthClass(risk.socChecklist.healthScore)}`}>
+                        <ClipboardList className="w-3 h-3" />
+                        SOC {risk.socChecklist.completedCount}/{risk.socChecklist.items.length}
+                        {risk.socChecklist.overdueCount > 0 && (
+                          <span className="text-red-600"> · {risk.socChecklist.overdueCount} overdue</span>
+                        )}
+                      </span>
+                    )}
                   </span>
 
                   {/* Customer POC */}
@@ -229,6 +245,13 @@ export default function EscalationTable({ risks }: Props) {
                       </div>
                     )}
                   </div>
+
+                  {/* SOC Milestone Checklist */}
+                  {risk.socChecklist && (
+                    <div className="mt-4 pt-4 border-t border-slate-100">
+                      <SOCChecklistPanel checklist={risk.socChecklist} />
+                    </div>
+                  )}
 
                   {/* Project metadata footer */}
                   <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-500 border-t border-slate-100 pt-3">

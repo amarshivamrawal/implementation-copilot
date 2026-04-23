@@ -4,7 +4,45 @@
  * live Rocketlane API returns no matching projects.
  */
 
-import type { DashboardData } from '@/types';
+import type { DashboardData, SOCChecklist, SOCItemStatus } from '@/types';
+
+function daysAgo(n: number): string {
+  return new Date(Date.now() - n * 86_400_000).toISOString();
+}
+function daysFromNow(n: number): string {
+  return new Date(Date.now() + n * 86_400_000).toISOString();
+}
+
+function makeSocChecklist(
+  statuses: [SOCItemStatus, SOCItemStatus, SOCItemStatus, SOCItemStatus],
+  dueDates: [string | undefined, string | undefined, string | undefined, string | undefined],
+): SOCChecklist {
+  const LABELS = [
+    { key: 'GLR_MOM'        as const, label: 'GLR MOM shared (with go-live/cutover date)',     description: 'Go-Live Review meeting minutes must be sent and must clearly call out the go-live / cutover date.' },
+    { key: 'GOLIVE_COMM'    as const, label: 'Go-live communication sent',                     description: 'A formal go-live communication must be sent to all stakeholders before the cutover date.' },
+    { key: 'DAILY_USAGE'    as const, label: 'Daily usage reports shared',                     description: 'Daily usage reports must be generated and shared with the customer post go-live to track adoption.' },
+    { key: 'ONBOARDING_MOM' as const, label: 'Onboarding completion MOM + template sent',      description: 'Onboarding completion meeting minutes using the prescribed template must be sent to the customer.' },
+  ];
+
+  const scoreMap: Record<SOCItemStatus, number> = { DONE: 1, PENDING: 0.5, OVERDUE: 0, MISSING: 0 };
+
+  const items = LABELS.map((def, i) => ({
+    key:         def.key,
+    label:       def.label,
+    description: def.description,
+    status:      statuses[i],
+    dueDate:     dueDates[i],
+    completedAt: statuses[i] === 'DONE' ? daysAgo(1) : undefined,
+  }));
+
+  const completedCount = items.filter((x) => x.status === 'DONE').length;
+  const pendingCount   = items.filter((x) => x.status === 'PENDING').length;
+  const overdueCount   = items.filter((x) => x.status === 'OVERDUE').length;
+  const missingCount   = items.filter((x) => x.status === 'MISSING').length;
+  const healthScore    = Math.round((items.reduce((s, x) => s + scoreMap[x.status], 0) / items.length) * 100);
+
+  return { items, completedCount, pendingCount, overdueCount, missingCount, healthScore };
+}
 
 export const MOCK_DATA: DashboardData = {
   lastRefreshedAt: new Date().toISOString(),
@@ -14,6 +52,7 @@ export const MOCK_DATA: DashboardData = {
     highRisks:            3,
     totalDelays:          7,
     totalAgitatedSignals: 11,
+    socBlockers:          3,
   },
   projects: [
     // ── CRITICAL ─────────────────────────────────────────────────────────────
@@ -42,6 +81,10 @@ export const MOCK_DATA: DashboardData = {
           escalationReasons: ['Customer Agitation', 'Response Delay', 'Multiple Issues'],
         },
       },
+      socChecklist: makeSocChecklist(
+        ['DONE', 'OVERDUE', 'MISSING', 'MISSING'],
+        [daysAgo(10), daysAgo(3), undefined, undefined],
+      ),
       responseDelays: [
         {
           projectId:              'proj-001',
@@ -131,6 +174,10 @@ export const MOCK_DATA: DashboardData = {
           escalationReasons: ['Customer Agitation', 'Response Delay', 'Call Recording Signal'],
         },
       },
+      socChecklist: makeSocChecklist(
+        ['PENDING', 'PENDING', 'MISSING', 'MISSING'],
+        [daysFromNow(3), daysFromNow(5), undefined, undefined],
+      ),
       responseDelays: [
         {
           projectId:              'proj-002',
@@ -197,6 +244,10 @@ export const MOCK_DATA: DashboardData = {
           escalationReasons: ['Customer Overwhelmed', 'Response Delay'],
         },
       },
+      socChecklist: makeSocChecklist(
+        ['DONE', 'PENDING', 'MISSING', 'MISSING'],
+        [daysAgo(7), daysFromNow(14), undefined, undefined],
+      ),
       responseDelays: [
         {
           projectId:              'proj-003',
@@ -252,6 +303,10 @@ export const MOCK_DATA: DashboardData = {
           escalationReasons: ['Customer Frustrated', 'Response Delay'],
         },
       },
+      socChecklist: makeSocChecklist(
+        ['OVERDUE', 'MISSING', 'MISSING', 'MISSING'],
+        [daysAgo(5), undefined, undefined, undefined],
+      ),
       responseDelays: [
         {
           projectId:              'proj-004',
@@ -307,6 +362,10 @@ export const MOCK_DATA: DashboardData = {
           escalationReasons: ['Call Recording Signal', 'Customer Frustrated'],
         },
       },
+      socChecklist: makeSocChecklist(
+        ['DONE', 'PENDING', 'PENDING', 'MISSING'],
+        [daysAgo(5), daysFromNow(7), daysFromNow(10), undefined],
+      ),
       responseDelays: [],
       customerSignals: [
         {
@@ -360,6 +419,10 @@ export const MOCK_DATA: DashboardData = {
           escalationReasons: ['Response Delay'],
         },
       },
+      socChecklist: makeSocChecklist(
+        ['DONE', 'DONE', 'PENDING', 'PENDING'],
+        [daysAgo(14), daysAgo(7), daysFromNow(5), daysFromNow(10)],
+      ),
       responseDelays: [
         {
           projectId:              'proj-006',
@@ -403,6 +466,10 @@ export const MOCK_DATA: DashboardData = {
           escalationReasons: ['Customer Frustrated'],
         },
       },
+      socChecklist: makeSocChecklist(
+        ['DONE', 'DONE', 'DONE', 'DONE'],
+        [daysAgo(21), daysAgo(14), daysAgo(7), daysAgo(3)],
+      ),
       responseDelays: [],
       customerSignals: [
         {
@@ -445,6 +512,10 @@ export const MOCK_DATA: DashboardData = {
           escalationReasons: ['Response Delay', 'Customer Frustrated'],
         },
       },
+      socChecklist: makeSocChecklist(
+        ['DONE', 'DONE', 'OVERDUE', 'PENDING'],
+        [daysAgo(14), daysAgo(10), daysAgo(3), daysFromNow(7)],
+      ),
       responseDelays: [
         {
           projectId:              'proj-008',
