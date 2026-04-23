@@ -2,9 +2,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   RefreshCw, AlertCircle, Loader2, ShieldAlert,
-  Clock, CheckCircle2,
+  Clock, CheckCircle2, FileText,
 } from 'lucide-react';
 import { formatDistanceToNow, parseISO } from 'date-fns';
+import Link from 'next/link';
 import type { DashboardData, EscalationRisk } from '@/types';
 
 // Extend the API response type with optional demo flags
@@ -129,6 +130,13 @@ export default function DashboardPage() {
                 Refreshed {formatDistanceToNow(parseISO(data.lastRefreshedAt), { addSuffix: true })}
               </p>
             )}
+            <Link
+              href="/report"
+              className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors shadow-sm"
+            >
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline">View Report</span>
+            </Link>
             <button
               onClick={() => fetchData(true)}
               disabled={refreshing || loading}
