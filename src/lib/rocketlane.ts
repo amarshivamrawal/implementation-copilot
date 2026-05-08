@@ -113,6 +113,42 @@ export function isInProgressBaseApp(project: RLProject): boolean {
   return statusOk && nameEndsWithBaseApp;
 }
 
+// ─── API key verification ─────────────────────────────────────────────────────
+
+// Rocketlane API keys follow the pattern: rl-<uuid>
+const ROCKETLANE_KEY_RE = /^rl-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isValidApiKeyFormat(key: string): boolean {
+  return ROCKETLANE_KEY_RE.test(key);
+}
+
+export async function verifyApiKey(apiKey: string): Promise<{ valid: boolean; error?: string }> {
+  if (!apiKey) {
+    return { valid: false, error: 'API key is required' };
+  }
+  if (!isValidApiKeyFormat(apiKey)) {
+    return { valid: false, error: 'Invalid API key format. Expected: rl-<uuid>' };
+  }
+  try {
+    const client = axios.create({
+      baseURL: BASE_URL,
+      headers: { 'api-key': apiKey, 'Content-Type': 'application/json' },
+      timeout: 10_000,
+    });
+    await client.get('/projects', { params: { page: 1, limit: 1 } });
+    return { valid: true };
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      const status = err.response?.status;
+      if (status === 401 || status === 403) {
+        return { valid: false, error: 'Invalid or unauthorized API key' };
+      }
+      return { valid: false, error: `API error: ${status ?? err.message}` };
+    }
+    return { valid: false, error: 'Network error while verifying key' };
+  }
+}
+
 // ─── API calls ───────────────────────────────────────────────────────────────
 
 export async function fetchAllProjects(): Promise<RLProject[]> {
