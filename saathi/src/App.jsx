@@ -205,7 +205,7 @@ export default function App() {
     if (system) body.system = system;
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+      headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
       body: JSON.stringify(body),
     });
     if (!res.ok) {
