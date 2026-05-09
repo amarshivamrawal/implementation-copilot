@@ -232,13 +232,16 @@ export default function App() {
       finalRef.current = fin; setFinalText(fin); setLiveText(interim);
     };
     r.onerror = (e) => { if (e.error !== "no-speech") showToast("Mic error: " + e.error, "error"); };
+    r.onend = () => { if (recogRef.current === r) { try { r.start(); } catch(_) {} } };
     r.start();
     recogRef.current = r; setRecording(true);
     timerRef.current = setInterval(() => { timerValRef.current += 1; setTimer(t => t + 1); }, 1000);
   };
 
   const stopRec = () => {
-    recogRef.current?.stop();
+    const r = recogRef.current;
+    recogRef.current = null;
+    r?.stop();
     clearInterval(timerRef.current);
     setRecording(false); setLiveText("");
   };
