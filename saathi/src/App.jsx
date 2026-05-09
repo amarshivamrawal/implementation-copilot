@@ -201,7 +201,7 @@ export default function App() {
   };
 
   const callClaude = async (messages, system) => {
-    const body = { model: "claude-sonnet-4-20250514", max_tokens: 1000, messages };
+    const body = { model: "claude-sonnet-4-6", max_tokens: 1000, messages };
     if (system) body.system = system;
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -252,7 +252,8 @@ export default function App() {
         role: "user",
         content: `Analyze this transcript. Reply ONLY with valid JSON, zero markdown:\n{"title":"concise title max 6 words","summary":"2-3 sentence summary","emotion":"one of: positive,excited,focused,neutral,concerned,negative","keyTopics":["topic1","topic2","topic3"],"actionItems":["action1","action2"],"sentiment":75}\n\nTranscript:\n${text}`
       }]);
-      const a = JSON.parse(raw);
+      const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/,"").trim();
+      const a = JSON.parse(cleaned);
       const mem = { id: Date.now(), ts: new Date().toISOString(), dur: timerValRef.current, transcript: text, ...a };
       setMemories(prev => [mem, ...prev]);
       finalRef.current = ""; setFinalText(""); setTimer(0);
@@ -280,7 +281,7 @@ export default function App() {
         `[${new Date(m.ts).toLocaleDateString("en-IN")}] "${m.title}" (${fmt(m.dur)})\nSummary: ${m.summary}\nTopics: ${m.keyTopics?.join(", ")}\nActions: ${m.actionItems?.join(", ")}`
       ).join("\n\n");
       const response = await callClaude(
-        newMsgs.filter(m => m.role !== "ai").map(m => ({ role: m.role === "user" ? "user" : "assistant", content: m.text })),
+        newMsgs.filter(m => m.role !== "ai" || newMsgs[0] !== m).map(m => ({ role: m.role === "user" ? "user" : "assistant", content: m.text })),
         `You are Saathi, a warm and friendly AI companion always available to help. You have access to the user's conversation memories. Answer like a trusted friend who remembers everything. Be concise, warm, and direct.\n\nMemories:\n${ctx || "No memories stored yet."}`
       );
       setAskMsgs([...newMsgs, { role: "ai", text: response }]);
