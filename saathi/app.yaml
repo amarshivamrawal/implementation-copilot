@@ -3,11 +3,14 @@ runtime: python312
 handlers:
 - url: /assets
   static_dir: dist/assets
+  expiration: "365d"
 
 - url: /(.*)
   static_files: dist/index.html
   upload: dist/index.html
+  expiration: "0s"
 
 - url: /
   static_files: dist/index.html
   upload: dist/index.html
+  expiration: "0s"

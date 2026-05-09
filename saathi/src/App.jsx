@@ -222,9 +222,7 @@ export default function App() {
     finalRef.current = ""; timerValRef.current = 0;
     setFinalText(""); setLiveText(""); setTimer(0);
     const r = new SR();
-    r.continuous = true; r.interimResults = true;
-    r.lang = navigator.language?.startsWith("en") ? navigator.language : "en-US";
-    r.maxAlternatives = 1;
+    r.continuous = true; r.interimResults = true; r.lang = "en-US"; r.maxAlternatives = 1;
     r.onresult = (e) => {
       let interim = "", fin = finalRef.current;
       for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -234,7 +232,7 @@ export default function App() {
       finalRef.current = fin; setFinalText(fin); setLiveText(interim);
     };
     r.onerror = (e) => { if (e.error !== "no-speech" && e.error !== "aborted") showToast("Mic error: " + e.error, "error"); };
-    r.onend = () => { if (recogRef.current === r) { try { r.start(); } catch(_) {} } };
+    r.onend = () => { if (recogRef.current === r) { setTimeout(() => { if (recogRef.current === r) try { r.start(); } catch(_) {} }, 200); } };
     r.start();
     recogRef.current = r; setRecording(true);
     timerRef.current = setInterval(() => { timerValRef.current += 1; setTimer(t => t + 1); }, 1000);
